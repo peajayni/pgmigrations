@@ -18,9 +18,9 @@ to store the migration history.
 
 ### Create a migration
 ```
-pgmigrations create <dsn> <tag>
+pgmigrations create <tag> <dsn>
 ```
-This will create a skeleton migration in the ```migrations directory```. The migration will consist of a directory with
+This will create a skeleton migration in the ```migrations``` directory. The migration will consist of a directory with
 the name ```<timestamp>_tag```, for example ```20200701_1030_first_migration ```, which contains two files; 
 ```apply.sql``` and ```rollback.sql```.
 
@@ -35,6 +35,6 @@ This will apply any unapplied migrations. Each migration is applied in an atomic
 
 ### Rollback a migration
 ```
-pgmigrations rollback <dsn> <name>
+pgmigrations rollback <name> <dsn>
 ```
 This will rollback an already applied migration. 

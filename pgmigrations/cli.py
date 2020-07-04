@@ -18,9 +18,9 @@ def init(dsn):
 
 
 @cli.command()
-@click.argument("dsn")
 @click.argument("tag")
-def create(dsn, tag):
+@click.argument("dsn")
+def create(tag, dsn):
     migrations = Migrations()
     migrations.create(dsn, tag)
 
@@ -33,9 +33,9 @@ def apply(dsn):
 
 
 @cli.command()
-@click.argument("dsn")
 @click.argument("name")
-def rollback(dsn, name):
+@click.argument("dsn")
+def rollback(name, dsn):
     migrations = Migrations(dsn)
     migrations.rollback(name)
 
