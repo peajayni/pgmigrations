@@ -9,9 +9,9 @@ import pytest
 from pgmigrations import constants, data_access
 from pgmigrations.api import Migrations, Migration
 from pgmigrations.exceptions import MigrationsNotFound, MigrationNotFound, MigrationAlreadyExists
+from tests import DSN
 
 BASE_DIRECTORY = pathlib.Path(__file__).parent.absolute() / "fixtures" / "migrations"
-DSN = "dbname=test user=test password=test host=localhost"
 
 
 @pytest.fixture(autouse=True)
