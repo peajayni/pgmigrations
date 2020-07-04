@@ -1,15 +1,19 @@
 language: python
-
 services:
-  - postgresql
-
+- postgresql
 install:
-  - pip install -r requirements-dev.txt
-  - pip install -r requirements.txt
-
+- pip install -r requirements-dev.txt
+- pip install -r requirements.txt
 script:
-  - ./ci/lint.sh
-  - ./ci/integration_test.sh
-
+- "./ci/lint.sh"
+- "./ci/integration_test.sh"
 after_success:
-  - coveralls
+- coveralls
+deploy:
+  provider: pypi
+  username: __token__
+  password:
+    secure: AoADfTJ2L6ZbSDwmUczjP2nJEr4IIrk8O4pCEm/xdTBM6a9UC4LbIWT//fxUuV2PfojYgsUk6+vqbZQdKHPRlO6E2AfeH37lvWCooAiy1RK3HiOLdcn0lES32UJiqC9lHU3YM0I7W/9PWdpUSbxlIVJYG5IsoZQ+E9/DEUQj1LmgmqtVQ5nqMcUPc5KwYTnPqlWPS8Ezqavv2/fh5+H2oHIG7ZFV7qNwA0Ncrgheo65UQEfnSgdSyi5TV3FbHkRELKuNSjMrWbp21uS8sN5UMdbBut/1lS9dUYhnOHE2NijMPvxBoeqHBa5NY/s7NWYRX1Dye57Rb0x6M/150BF7u8Oubr2CEUPnchm4bjyK5H652uDXJ9scETR7Vw1+3bFd6r7BRXERzYZdv3lfakDll9x98qrRC03E1x3YXgHknty+czd6INwi2W+SW56Xp+dfiIIXu+KZqEImaTTsLRIX8RVVTni8ctKE+b3O5eh5vv3gJZczNANoEKX66tnv9YqWRlVtK0qBEwC4eTvxgtqWJ2oVortYZJ8K/AvukQTlzZHuOQpjoPsNbExoGBPL2qPAtSBdazZCO+pnWwlz4SVIQcd5QFvFe0MiUOMGsX/OiDzwI/fmlOCegCmtsFRYMQNkUkCUoXcYzhJ9Wv1JcOdVeP0rhQcJxQ9VoQ6iKx4Bock=
+  on:
+    tags: true
+  distributions: sdist bdist_wheel
