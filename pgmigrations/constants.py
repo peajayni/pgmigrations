@@ -1,5 +1,5 @@
 BOOTSTRAP_MIGRATIONS_DIRECTORY = "bootstrap_migrations"
 MIGRATIONS_DIRECTORY = "migrations"
 MIGRATIONS_TABLE_NAME = "pgmigrations"
-UP_FILENAME = "up.sql"
-DOWN_FILENAME = "down.sql"
+APPLY_FILENAME = "apply.sql"
+ROLLBACK_FILENAME = "rollback.sql"

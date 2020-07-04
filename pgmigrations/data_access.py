@@ -57,8 +57,8 @@ def has_migration_been_applied(cursor, name):
     return applied
 
 
-def record_up(cursor, name):
-    LOGGER.debug("Migration %s - recording up", name)
+def record_apply(cursor, name):
+    LOGGER.debug("Migration %s - recording apply", name)
     cursor.execute(
         f"""
         INSERT INTO {constants.MIGRATIONS_TABLE_NAME} (name)
@@ -68,8 +68,8 @@ def record_up(cursor, name):
     )
 
 
-def record_down(cursor, name):
-    LOGGER.debug("Migration %s - recording down", name)
+def record_rollback(cursor, name):
+    LOGGER.debug("Migration %s - recording rollback", name)
     cursor.execute(
         f"""
         DELETE FROM {constants.MIGRATIONS_TABLE_NAME}

@@ -54,41 +54,41 @@ class Migration:
 
     def create(self):
         self.path.mkdir(parents=True, exist_ok=True)
-        self.up_script.create()
-        self.down_script.create()
+        self.apply_script.create()
+        self.rollback_script.create()
 
     @property
-    def up_script(self):
-        path = self.path / constants.UP_FILENAME
+    def apply_script(self):
+        path = self.path / constants.APPLY_FILENAME
         return MigrationScript(self, path)
 
     @property
-    def down_script(self):
-        path = self.path / constants.DOWN_FILENAME
+    def rollback_script(self):
+        path = self.path / constants.ROLLBACK_FILENAME
         return MigrationScript(self, path)
 
-    def up(self):
-        LOGGER.debug("%s - running up", self)
+    def apply(self):
+        LOGGER.debug("%s - running apply", self)
         with data_access.get_cursor(self.dsn) as cursor:
             if self.is_applied(cursor):
                 LOGGER.debug("%s - nothing to do", self)
                 return
-            data_access.execute_sql(cursor, self.up_script.sql)
-            data_access.record_up(cursor, self.name)
-        LOGGER.debug("%s - up succeeded", self)
+            data_access.execute_sql(cursor, self.apply_script.sql)
+            data_access.record_apply(cursor, self.name)
+        LOGGER.debug("%s - apply succeeded", self)
 
-    def down(self):
-        LOGGER.debug("%s - running down", self)
+    def rollback(self):
+        LOGGER.debug("%s - running rollback", self)
         with data_access.get_cursor(self.dsn) as cursor:
             if not self.is_applied(cursor):
                 LOGGER.debug("%s - nothing to do", self)
                 return
-            data_access.execute_sql(cursor, self.down_script.sql)
+            data_access.execute_sql(cursor, self.rollback_script.sql)
 
             # When bootstrapping the migrations table may not exist
             if data_access.table_exists(cursor, constants.MIGRATIONS_TABLE_NAME):
-                data_access.record_down(cursor, self.name)
-        LOGGER.debug("%s - down succeeded", self)
+                data_access.record_rollback(cursor, self.name)
+        LOGGER.debug("%s - rollback succeeded", self)
 
     def is_applied(self, cursor):
         # When bootstrapping the migrations table may not exist
@@ -121,7 +121,7 @@ class Migrations:
     def init(self):
         self.base_dir.mkdir(parents=True, exist_ok=True)
         bootstrap_migrations = Migrations(self.dsn, base_dir=BOOTSTRAP_BASE_DIR)
-        bootstrap_migrations.up()
+        bootstrap_migrations.apply()
 
     @property
     def migrations(self):
@@ -138,16 +138,16 @@ class Migrations:
                 raise ValueError("Migration with this name has already been applied")
         migration.create()
 
-    def up(self):
+    def apply(self):
         for migration in self.migrations:
-            migration.up()
+            migration.apply()
 
-    def down(self, name):
+    def rollback(self, name):
         matches = [migration for migration in self.migrations if migration.name == name]
         if not matches:
             raise ValueError(f"Migration {name} not found")
         migration = matches[0]
-        migration.down()
+        migration.rollback()
 
     def __eq__(self, other):
         return isinstance(other, self.__class__) and self.base_dir == other.base_dir

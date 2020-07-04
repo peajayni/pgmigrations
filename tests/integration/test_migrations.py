@@ -61,12 +61,12 @@ def test_create_first_migration(inited_workspace, migrations):
     expected_migration = (
         inited_workspace / constants.MIGRATIONS_DIRECTORY / f"20200701_0000_migration_{tag}"
     )
-    expected_up = expected_migration / constants.UP_FILENAME
-    expected_down = expected_migration / constants.DOWN_FILENAME
+    expected_apply = expected_migration / constants.APPLY_FILENAME
+    expected_rollback = expected_migration / constants.ROLLBACK_FILENAME
 
     assert expected_migration.exists()
-    assert expected_up.exists()
-    assert expected_down.exists()
+    assert expected_apply.exists()
+    assert expected_rollback.exists()
 
 
 def test_create_second_migration(inited_workspace, migrations):
@@ -78,12 +78,12 @@ def test_create_second_migration(inited_workspace, migrations):
     expected_migration = (
         inited_workspace / constants.MIGRATIONS_DIRECTORY / f"20200701_0000_migration_{tag1}"
     )
-    expected_up = expected_migration / constants.UP_FILENAME
-    expected_down = expected_migration / constants.DOWN_FILENAME
+    expected_apply = expected_migration / constants.APPLY_FILENAME
+    expected_rollback = expected_migration / constants.ROLLBACK_FILENAME
 
     assert expected_migration.exists()
-    assert expected_up.exists()
-    assert expected_down.exists()
+    assert expected_apply.exists()
+    assert expected_rollback.exists()
 
 
 def test_migrations():
@@ -95,11 +95,11 @@ def test_migrations():
     assert migrations.migrations == expected_migrations
 
 
-def test_up_and_down():
+def test_apply_and_rollback():
     migrations = Migrations(DSN, base_dir=BASE_DIR)
     migrations.init()
 
-    migrations.up()
+    migrations.apply()
 
     for migration in migrations.migrations:
         with data_access.get_cursor(DSN) as cursor:
@@ -108,7 +108,7 @@ def test_up_and_down():
             assert data_access.has_migration_been_applied(cursor, migration.name)
 
     for migration in migrations.migrations:
-        migrations.down(migration.name)
+        migrations.rollback(migration.name)
 
         with data_access.get_cursor(DSN) as cursor:
             table = migration.tag

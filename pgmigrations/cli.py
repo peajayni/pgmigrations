@@ -27,17 +27,17 @@ def create(dsn, tag):
 
 @cli.command()
 @click.argument("dsn")
-def up(dsn):
+def apply(dsn):
     migrations = Migrations(dsn)
-    migrations.up()
+    migrations.apply()
 
 
 @cli.command()
 @click.argument("dsn")
 @click.argument("name")
-def down(dsn, name):
+def rollback(dsn, name):
     migrations = Migrations(dsn)
-    migrations.down(name)
+    migrations.rollback(name)
 
 
 if __name__ == "__main__":
