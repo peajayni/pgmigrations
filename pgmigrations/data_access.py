@@ -16,14 +16,14 @@ def get_cursor(dsn):
             yield cursor
 
 
-def execute_sql(cursor, sql):
+def execute_sql(cursor, sql, parameters=None):
     LOGGER.debug("Executing sql: %s", sql)
-    cursor.execute(sql)
+    cursor.execute(sql, parameters)
 
 
 def table_exists(cursor, name):
     LOGGER.debug("Checking if table %s exists", name)
-    cursor.execute(f"SELECT to_regclass('{name}')")
+    execute_sql(cursor, f"SELECT to_regclass('{name}')")
     row = cursor.fetchone()
     exists = row[0] is not None
     if exists:
@@ -35,12 +35,13 @@ def table_exists(cursor, name):
 
 def drop_table(cursor, name):
     LOGGER.debug("Dropping table %s", name)
-    cursor.execute(f"DROP TABLE {name}")
+    execute_sql(cursor, f"DROP TABLE {name}")
 
 
 def has_migration_been_applied(cursor, name):
     LOGGER.debug("Checking if migration %s has been applied", name)
-    cursor.execute(
+    execute_sql(
+        cursor,
         f"""
         SELECT COUNT(1)
         FROM {constants.MIGRATIONS_TABLE_NAME}
@@ -59,7 +60,8 @@ def has_migration_been_applied(cursor, name):
 
 def record_apply(cursor, name):
     LOGGER.debug("Migration %s - recording apply", name)
-    cursor.execute(
+    execute_sql(
+        cursor,
         f"""
         INSERT INTO {constants.MIGRATIONS_TABLE_NAME} (name)
         VALUES (%s)
@@ -70,7 +72,8 @@ def record_apply(cursor, name):
 
 def record_rollback(cursor, name):
     LOGGER.debug("Migration %s - recording rollback", name)
-    cursor.execute(
+    execute_sql(
+        cursor,
         f"""
         DELETE FROM {constants.MIGRATIONS_TABLE_NAME}
         WHERE name = %s
