@@ -1,4 +1,4 @@
 #!/bin/bash
 set -eufx
 
-black --check pgevents
+black --check pgmigrations
