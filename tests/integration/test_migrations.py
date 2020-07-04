@@ -1,13 +1,17 @@
 import os
 import pathlib
 import tempfile
+from unittest.mock import sentinel
 
 import freezegun
 import pytest
 
 from pgmigrations import constants, data_access
 from pgmigrations.api import Migrations, Migration
-from tests.integration import BASE_DIR, DSN
+from pgmigrations.exceptions import MigrationsNotFound, MigrationNotFound, MigrationAlreadyExists
+
+BASE_DIRECTORY = pathlib.Path(__file__).parent.absolute() / "fixtures" / "migrations"
+DSN = "dbname=test user=test password=test host=localhost"
 
 
 @pytest.fixture(autouse=True)
@@ -54,7 +58,7 @@ def test_migrations_init(workspace, migrations):
         assert data_access.table_exists(cursor, constants.MIGRATIONS_TABLE_NAME)
 
 
-def test_create_first_migration(inited_workspace, migrations):
+def test_create_migration(inited_workspace, migrations):
     tag = "foo"
     migrations.create(tag)
 
@@ -69,7 +73,7 @@ def test_create_first_migration(inited_workspace, migrations):
     assert expected_rollback.exists()
 
 
-def test_create_second_migration(inited_workspace, migrations):
+def test_create_multiple_migrations(inited_workspace, migrations):
     tag0 = "foo"
     tag1 = "bar"
     migrations.create(tag0)
@@ -86,8 +90,16 @@ def test_create_second_migration(inited_workspace, migrations):
     assert expected_rollback.exists()
 
 
+def test_create_duplicate_migrations(inited_workspace, migrations):
+    tag = "foo"
+    migrations.create(tag)
+
+    with pytest.raises(MigrationAlreadyExists):
+        migrations.create(tag)
+
+
 def test_migrations():
-    migrations = Migrations(DSN, base_dir=BASE_DIR)
+    migrations = Migrations(DSN, base_directory=BASE_DIRECTORY)
     expected_migrations = [
         Migration(migrations, "first"),
         Migration(migrations, "second"),
@@ -96,7 +108,7 @@ def test_migrations():
 
 
 def test_apply_and_rollback():
-    migrations = Migrations(DSN, base_dir=BASE_DIR)
+    migrations = Migrations(DSN, base_directory=BASE_DIRECTORY)
     migrations.init()
 
     migrations.apply()
@@ -114,3 +126,21 @@ def test_apply_and_rollback():
             table = migration.tag
             assert not data_access.table_exists(cursor, table)
             assert not data_access.has_migration_been_applied(cursor, migration.name)
+
+
+def test_apply_when_no_migrations(workspace):
+    migrations = Migrations(DSN)
+    with pytest.raises(MigrationsNotFound):
+        migrations.apply()
+
+
+def test_rollback_when_no_migrations(workspace):
+    migrations = Migrations(DSN)
+    with pytest.raises(MigrationsNotFound):
+        migrations.rollback(sentinel.name)
+
+
+def test_rollback_invalid_name():
+    migrations = Migrations(DSN, base_directory=BASE_DIRECTORY)
+    with pytest.raises(MigrationNotFound):
+        migrations.rollback("does_not_exist")

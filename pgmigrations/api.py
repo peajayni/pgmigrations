@@ -5,12 +5,17 @@ import pathlib
 from cached_property import cached_property
 
 from pgmigrations import constants, data_access
+from pgmigrations.exceptions import (
+    MigrationsNotFound,
+    MigrationNotFound,
+    MigrationAlreadyExists,
+)
 
 LOGGER = logging.getLogger(__name__)
-BOOTSTRAP_BASE_DIR = (
+BOOTSTRAP_BASE_DIRECTORY = (
     pathlib.Path(__file__).parent.absolute() / constants.BOOTSTRAP_MIGRATIONS_DIRECTORY
 )
-DEFAULT_BASE_DIR = pathlib.Path(constants.MIGRATIONS_DIRECTORY)
+DEFAULT_BASE_DIRECTORY = pathlib.Path(constants.MIGRATIONS_DIRECTORY)
 
 
 class MigrationScript:
@@ -42,7 +47,7 @@ class Migration:
 
     @property
     def path(self):
-        return self.migrations.base_dir / self.name
+        return self.migrations.base_directory / self.name
 
     @classmethod
     def from_path(cls, migrations, path):
@@ -114,18 +119,22 @@ class Migration:
 
 
 class Migrations:
-    def __init__(self, dsn, base_dir=None):
+    def __init__(self, dsn, base_directory=None):
         self.dsn = dsn
-        self.base_dir = base_dir if base_dir else DEFAULT_BASE_DIR
+        self.base_directory = (
+            pathlib.Path(base_directory) if base_directory else DEFAULT_BASE_DIRECTORY
+        )
 
     def init(self):
-        self.base_dir.mkdir(parents=True, exist_ok=True)
-        bootstrap_migrations = Migrations(self.dsn, base_dir=BOOTSTRAP_BASE_DIR)
+        self.base_directory.mkdir(parents=True, exist_ok=True)
+        bootstrap_migrations = Migrations(
+            self.dsn, base_directory=BOOTSTRAP_BASE_DIRECTORY
+        )
         bootstrap_migrations.apply()
 
     @property
     def migrations(self):
-        paths = list(self.base_dir.glob("*_migration_*"))
+        paths = list(self.base_directory.glob("*_migration_*"))
         LOGGER.debug("Found migration paths: %s", paths)
         migrations = sorted([Migration.from_path(self, path) for path in paths])
         LOGGER.info("Found migrations: %s", migrations)
@@ -133,21 +142,31 @@ class Migrations:
 
     def create(self, tag):
         migration = Migration(self, tag)
-        with data_access.get_cursor(self.dsn) as cursor:
-            if migration.is_applied(cursor):
-                raise ValueError("Migration with this name has already been applied")
+        if migration in self.migrations:
+            raise MigrationAlreadyExists(f"Migration {migration} already exists")
         migration.create()
 
     def apply(self):
+        self.ensure_migrations_exist()
         for migration in self.migrations:
             migration.apply()
 
     def rollback(self, name):
+        self.ensure_migrations_exist()
         matches = [migration for migration in self.migrations if migration.name == name]
         if not matches:
-            raise ValueError(f"Migration {name} not found")
+            raise MigrationNotFound(f"Migration {name} not found")
         migration = matches[0]
         migration.rollback()
 
+    def ensure_migrations_exist(self):
+        if not self.migrations:
+            raise MigrationsNotFound(
+                f"Cound not find any migrations in {self.base_directory}"
+            )
+
     def __eq__(self, other):
-        return isinstance(other, self.__class__) and self.base_dir == other.base_dir
+        return (
+            isinstance(other, self.__class__)
+            and self.base_directory == other.base_directory
+        )

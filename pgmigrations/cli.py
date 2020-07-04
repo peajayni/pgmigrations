@@ -12,31 +12,35 @@ def cli():
 
 @cli.command()
 @click.option("--dsn", envvar="PGMIGRATIONS_DSN")
-def init(dsn):
-    migrations = Migrations(dsn)
+@click.option("--base-directory", envvar="PGMIGRATIONS_BASE_DIRECTORY", default=None)
+def init(dsn, base_directory):
+    migrations = Migrations(dsn, base_directory=base_directory)
     migrations.init()
 
 
 @cli.command()
 @click.option("--dsn", envvar="PGMIGRATIONS_DSN")
+@click.option("--base-directory", envvar="PGMIGRATIONS_BASE_DIRECTORY", default=None)
 @click.argument("tag")
-def create(dsn, tag):
-    migrations = Migrations(dsn)
+def create(dsn, base_directory, tag):
+    migrations = Migrations(dsn, base_directory=base_directory)
     migrations.create(tag)
 
 
 @cli.command()
 @click.option("--dsn", envvar="PGMIGRATIONS_DSN")
-def apply(dsn):
-    migrations = Migrations(dsn)
+@click.option("--base-directory", envvar="PGMIGRATIONS_BASE_DIRECTORY", default=None)
+def apply(dsn, base_directory):
+    migrations = Migrations(dsn, base_directory=base_directory)
     migrations.apply()
 
 
 @cli.command()
 @click.option("--dsn", envvar="PGMIGRATIONS_DSN")
+@click.option("--base-directory", envvar="PGMIGRATIONS_BASE_DIRECTORY", default=None)
 @click.argument("name")
-def rollback(dsn, name):
-    migrations = Migrations(dsn)
+def rollback(dsn, base_directory, name):
+    migrations = Migrations(dsn, base_directory=base_directory)
     migrations.rollback(name)
 
 

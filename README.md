@@ -11,11 +11,12 @@ SQL migrations for projects using PostgreSQL
 
 ### Initialise the migrations
 ```
-pgmigrations init --dsn <dsn>
+pgmigrations init --dsn <dsn> [--base-directory <base directory>]
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
+export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
 pgmigrations init
 ```
 
@@ -24,11 +25,12 @@ to store the migration history.
 
 ### Create a migration
 ```
-pgmigrations create --dsn <dsn> <tag>
+pgmigrations create --dsn <dsn> [--base-directory <base directory>] <tag>
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
+export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
 pgmigrations create <tag>
 ```
 
@@ -41,11 +43,12 @@ executed if the migraiton is rollbacked.
 
 ### Apply migrations
 ```
-pgmigrations apply --dsn=<dsn>
+pgmigrations apply --dsn=<dsn> [--base-directory <base directory>]
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
+export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
 pgmigrations apply
 ```
 
@@ -53,11 +56,12 @@ This will apply any unapplied migrations. Each migration is applied in an atomic
 
 ### Rollback a migration
 ```
-pgmigrations rollback --dsn=<dsn> <name> 
+pgmigrations rollback --dsn=<dsn> [--base-directory <base directory>] <name> 
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
+export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
 pgmigrations rollback <name>
 ```
 
