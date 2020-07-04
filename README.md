@@ -11,15 +11,27 @@ SQL migrations for projects using PostgreSQL
 
 ### Initialise the migrations
 ```
-pgmigrations init <dsn>
+pgmigrations init --dsn <dsn>
 ```
+or
+```
+export PGMIGRATIONS_DSN=<dsn>
+pgmigrations init
+```
+
 This will create a directory called ```migrations``` and will create a table called ```pgmigrations``` in the database
 to store the migration history.
 
 ### Create a migration
 ```
-pgmigrations create <tag> <dsn>
+pgmigrations create --dsn <dsn> <tag>
 ```
+or
+```
+export PGMIGRATIONS_DSN=<dsn>
+pgmigrations create <tag>
+```
+
 This will create a skeleton migration in the ```migrations``` directory. The migration will consist of a directory with
 the name ```<timestamp>_tag```, for example ```20200701_1030_first_migration ```, which contains two files; 
 ```apply.sql``` and ```rollback.sql```.
@@ -29,12 +41,24 @@ executed if the migraiton is rollbacked.
 
 ### Apply migrations
 ```
-pgmigrations apply <dsn>
+pgmigrations apply --dsn=<dsn>
 ```
+or
+```
+export PGMIGRATIONS_DSN=<dsn>
+pgmigrations apply
+```
+
 This will apply any unapplied migrations. Each migration is applied in an atomic transaction.
 
 ### Rollback a migration
 ```
-pgmigrations rollback <name> <dsn>
+pgmigrations rollback --dsn=<dsn> <name> 
 ```
+or
+```
+export PGMIGRATIONS_DSN=<dsn>
+pgmigrations rollback <name>
+```
+
 This will rollback an already applied migration. 
