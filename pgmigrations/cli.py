@@ -21,8 +21,8 @@ def init(dsn):
 @click.option("--dsn", envvar="PGMIGRATIONS_DSN")
 @click.argument("tag")
 def create(dsn, tag):
-    migrations = Migrations()
-    migrations.create(dsn, tag)
+    migrations = Migrations(dsn)
+    migrations.create(tag)
 
 
 @cli.command()
