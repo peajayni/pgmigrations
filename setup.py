@@ -1,11 +1,11 @@
 import pathlib
 import re
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
-def get_version():
-    version_path = pathlib.Path("pgmigrations") / "version.py"
+def get_version(package):
+    version_path = pathlib.Path(package) / "version.py"
     version_text = version_path.read_text()
     version_pattern = r"__version__ = \"(.*)\""
     match = re.search(version_pattern, version_text)
@@ -25,8 +25,8 @@ def get_long_description():
 
 setup(
     name="pgmigrations",
-    version=get_version(),
-    packages=["pgmigrations"],
+    version=get_version("pgmigrations"),
+    packages=find_packages(exclude=["tests", "tests.*"]),
     install_requires=get_requirements(),
     description="SQL migrations for projects using PostgreSQL",
     long_description=get_long_description(),
