@@ -11,6 +11,7 @@ script:
 after_success:
 - coveralls
 deploy:
+  skip_cleanup: true
   provider: pypi
   username: __token__
   password:
