@@ -12,10 +12,9 @@ from pgmigrations.exceptions import (
 )
 
 LOGGER = logging.getLogger(__name__)
-BOOTSTRAP_BASE_DIRECTORY = (
-    pathlib.Path(__file__).parent.absolute() / constants.BOOTSTRAP_MIGRATIONS_DIRECTORY
+CORE_LOCATION = (
+    pathlib.Path(__file__).parent.absolute() / constants.MIGRATIONS_DIRECTORY
 )
-DEFAULT_BASE_DIRECTORY = pathlib.Path(constants.MIGRATIONS_DIRECTORY)
 
 
 class MigrationScript:
@@ -32,30 +31,18 @@ class MigrationScript:
 
 
 class Migration:
-    def __init__(self, migrations, tag, timestamp=None):
-        self.migrations = migrations
-        self.tag = tag
-        self.timestamp = timestamp or datetime.datetime.now().strftime("%Y%m%d_%H%M")
+    def __init__(self, dsn, path):
+        self.dsn = dsn
+        self.path = path
 
     @property
-    def dsn(self):
-        return self.migrations.dsn
+    def tag(self):
+        _, tag = self.path.name.split("_migration_", maxsplit=1)
+        return tag
 
     @property
     def name(self):
-        return f"{self.timestamp}_migration_{self.tag}"
-
-    @property
-    def path(self):
-        return self.migrations.base_directory / self.name
-
-    @classmethod
-    def from_path(cls, migrations, path):
-        LOGGER.debug("Loading migration instance from path: %s", path)
-        timestamp, name = path.name.split("_migration_", maxsplit=1)
-        migration = cls(migrations, name, timestamp=timestamp)
-        LOGGER.debug("Loaded migration instance: %s", migration)
-        return migration
+        return self.path.name
 
     def create(self):
         self.path.mkdir(parents=True, exist_ok=True)
@@ -110,8 +97,8 @@ class Migration:
     def __eq__(self, other):
         return (
             isinstance(other, self.__class__)
-            and self.migrations == other.migrations
-            and self.name == other.name
+            and self.dsn == other.dsn
+            and self.path == other.path
         )
 
     def __lt__(self, other):
@@ -119,29 +106,28 @@ class Migration:
 
 
 class Migrations:
-    def __init__(self, dsn, base_directory=None):
+    def __init__(self, dsn, locations=None):
         self.dsn = dsn
-        self.base_directory = (
-            pathlib.Path(base_directory) if base_directory else DEFAULT_BASE_DIRECTORY
-        )
+        self.base_location = pathlib.Path.cwd() / constants.MIGRATIONS_DIRECTORY
+        self.locations = [CORE_LOCATION, self.base_location] + (locations or [])
 
     def init(self):
-        self.base_directory.mkdir(parents=True, exist_ok=True)
-        bootstrap_migrations = Migrations(
-            self.dsn, base_directory=BOOTSTRAP_BASE_DIRECTORY
-        )
-        bootstrap_migrations.apply()
+        self.base_location.mkdir(parents=True, exist_ok=True)
 
     @property
     def migrations(self):
-        paths = list(self.base_directory.glob("*_migration_*"))
+        paths = []
+        for location in self.locations:
+            paths += list(location.glob("*_migration_*"))
         LOGGER.debug("Found migration paths: %s", paths)
-        migrations = sorted([Migration.from_path(self, path) for path in paths])
+        migrations = sorted([Migration(self.dsn, path) for path in paths])
         LOGGER.info("Found migrations: %s", migrations)
         return migrations
 
     def create(self, tag):
-        migration = Migration(self, tag)
+        timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
+        path = self.base_location / f"{timestamp}_migration_{tag}"
+        migration = Migration(self.dsn, path)
         if migration in self.migrations:
             raise MigrationAlreadyExists(f"Migration {migration} already exists")
         migration.create()
@@ -162,11 +148,12 @@ class Migrations:
     def ensure_migrations_exist(self):
         if not self.migrations:
             raise MigrationsNotFound(
-                f"Cound not find any migrations in {self.base_directory}"
+                f"Cound not find any migrations in {self.base_location}"
             )
 
     def __eq__(self, other):
         return (
             isinstance(other, self.__class__)
-            and self.base_directory == other.base_directory
+            and self.dsn == other.dsn
+            and self.locations == other.locations
         )

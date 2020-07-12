@@ -1,4 +1,3 @@
-BOOTSTRAP_MIGRATIONS_DIRECTORY = "bootstrap_migrations"
 MIGRATIONS_DIRECTORY = "migrations"
 MIGRATIONS_TABLE_NAME = "pgmigrations"
 APPLY_FILENAME = "apply.sql"

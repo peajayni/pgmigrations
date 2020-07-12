@@ -11,7 +11,7 @@ from pgmigrations.api import Migrations, Migration
 from pgmigrations.exceptions import MigrationsNotFound, MigrationNotFound, MigrationAlreadyExists
 from tests import DSN
 
-BASE_DIRECTORY = pathlib.Path(__file__).parent.absolute() / "fixtures" / "migrations"
+BASE_LOCATION = pathlib.Path(__file__).parent.absolute() / "fixtures" / "migrations"
 
 
 @pytest.fixture(autouse=True)
@@ -29,7 +29,7 @@ def clean_database():
                 data_access.drop_table(cursor, table)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def workspace():
     with tempfile.TemporaryDirectory() as workspace:
         os.chdir(workspace)
@@ -53,9 +53,6 @@ def test_migrations_init(workspace, migrations):
     migrations_dir = workspace / constants.MIGRATIONS_DIRECTORY
 
     assert migrations_dir.exists()
-
-    with data_access.get_cursor(DSN) as cursor:
-        assert data_access.table_exists(cursor, constants.MIGRATIONS_TABLE_NAME)
 
 
 def test_create_migration(inited_workspace, migrations):
@@ -99,48 +96,56 @@ def test_create_duplicate_migrations(inited_workspace, migrations):
 
 
 def test_migrations():
-    migrations = Migrations(DSN, base_directory=BASE_DIRECTORY)
+    migrations = Migrations(DSN)
+    migrations.locations = [BASE_LOCATION]
     expected_migrations = [
-        Migration(migrations, "first"),
-        Migration(migrations, "second"),
+        Migration(DSN, BASE_LOCATION / "20200701_0000_migration_first"),
+        Migration(DSN, BASE_LOCATION / "20200701_0000_migration_second"),
     ]
     assert migrations.migrations == expected_migrations
 
 
-def test_apply_and_rollback():
-    migrations = Migrations(DSN, base_directory=BASE_DIRECTORY)
-    migrations.init()
+def test_apply():
+    migrations = Migrations(DSN, locations=[BASE_LOCATION])
 
     migrations.apply()
 
-    for migration in migrations.migrations:
-        with data_access.get_cursor(DSN) as cursor:
-            table = migration.tag
+    expected_tables = ["first", "second"]
+    with data_access.get_cursor(DSN) as cursor:
+        for table in expected_tables:
             assert data_access.table_exists(cursor, table)
+
+        for migration in migrations.migrations:
             assert data_access.has_migration_been_applied(cursor, migration.name)
 
-    for migration in migrations.migrations:
+
+def test_rollback():
+    migrations = Migrations(DSN, locations=[BASE_LOCATION])
+    migrations.apply()
+
+    for table, migration in zip(["second", "first"], reversed(migrations.migrations[-2:])):
         migrations.rollback(migration.name)
 
         with data_access.get_cursor(DSN) as cursor:
-            table = migration.tag
             assert not data_access.table_exists(cursor, table)
             assert not data_access.has_migration_been_applied(cursor, migration.name)
 
 
 def test_apply_when_no_migrations(workspace):
     migrations = Migrations(DSN)
+    migrations.locations = []
     with pytest.raises(MigrationsNotFound):
         migrations.apply()
 
 
 def test_rollback_when_no_migrations(workspace):
     migrations = Migrations(DSN)
+    migrations.locations = []
     with pytest.raises(MigrationsNotFound):
         migrations.rollback(sentinel.name)
 
 
 def test_rollback_invalid_name():
-    migrations = Migrations(DSN, base_directory=BASE_DIRECTORY)
+    migrations = Migrations(DSN, locations=[BASE_LOCATION])
     with pytest.raises(MigrationNotFound):
         migrations.rollback("does_not_exist")

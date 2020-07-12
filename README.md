@@ -11,44 +11,41 @@ SQL migrations for projects using PostgreSQL
 
 ### Initialise the migrations
 ```
-pgmigrations init --dsn <dsn> [--base-directory <base directory>]
+pgmigrations init --dsn <dsn>
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
-export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
 pgmigrations init
 ```
 
-This will create a directory called ```migrations``` and will create a table called ```pgmigrations``` in the database
-to store the migration history.
+This will create a directory called ```migrations``` in the current working directory
 
 ### Create a migration
 ```
-pgmigrations create --dsn <dsn> [--base-directory <base directory>] <tag>
+pgmigrations create --dsn <dsn> <tag>
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
-export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
 pgmigrations create <tag>
 ```
 
 This will create a skeleton migration in the ```migrations``` directory. The migration will consist of a directory with
-the name ```<timestamp>_tag```, for example ```20200701_1030_first_migration ```, which contains two files; 
-```apply.sql``` and ```rollback.sql```.
+the name ```<timestamp>_migrations_<tag>```, for example ```20200701_1030_migrations_first_migration ```, which 
+contains two files; ```apply.sql``` and ```rollback.sql```.
 
 As the names suggests, ```apply.sql``` will be executed when the migration is applied and ```rollback.sql``` will be 
 executed if the migraiton is rollbacked.
 
 ### Apply migrations
 ```
-pgmigrations apply --dsn=<dsn> [--base-directory <base directory>]
+pgmigrations apply --dsn=<dsn> [--locations <comma separated list of migration locations>]
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
-export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
+export PGMIGRATIONS_LOCATIONS=<comma separated list of migration locations>
 pgmigrations apply
 ```
 
@@ -56,12 +53,12 @@ This will apply any unapplied migrations. Each migration is applied in an atomic
 
 ### Rollback a migration
 ```
-pgmigrations rollback --dsn=<dsn> [--base-directory <base directory>] <name> 
+pgmigrations rollback --dsn=<dsn> [--locations <comma separated list of migration locations>]
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
-export PGMIGRATIONS_BASE_DIRECTORY=<base directory>
+export PGMIGRATIONS_LOCATIONS=<comma separated list of migration locations>
 pgmigrations rollback <name>
 ```
 
