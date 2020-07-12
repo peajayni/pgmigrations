@@ -34,5 +34,5 @@ setup(
     url="https://github.com/peajayni/pgmigrations",
     python_requires=">=3.6",
     entry_points={"console_scripts": ["pgmigrations=pgmigrations.cli:cli",],},
-    package_data={"pgmigrations": ["bootstrap_migrations/**/*"],},
+    package_data={"pgmigrations": ["migrations/**/*"],},
 )

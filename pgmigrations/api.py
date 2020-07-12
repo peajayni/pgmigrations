@@ -77,13 +77,13 @@ class Migration:
                 return
             data_access.execute_sql(cursor, self.rollback_script.sql)
 
-            # When bootstrapping the migrations table may not exist
+            # When processing the core migrations the table may not exist yet
             if data_access.table_exists(cursor, constants.MIGRATIONS_TABLE_NAME):
                 data_access.record_rollback(cursor, self.name)
         LOGGER.debug("%s - rollback succeeded", self)
 
     def is_applied(self, cursor):
-        # When bootstrapping the migrations table may not exist
+        # When processing the core migrations the table may not exist yet
         if not data_access.table_exists(cursor, constants.MIGRATIONS_TABLE_NAME):
             return False
         return data_access.has_migration_been_applied(cursor, self.name)
