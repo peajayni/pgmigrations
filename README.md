@@ -40,12 +40,12 @@ executed if the migraiton is rollbacked.
 
 ### Apply migrations
 ```
-pgmigrations apply --dsn=<dsn> [--locations <comma separated list of migration locations>]
+pgmigrations apply --dsn=<dsn> [--path <colon separated list of migration locations>]
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
-export PGMIGRATIONS_LOCATIONS=<comma separated list of migration locations>
+export PGMIGRATIONS_PATH=<colon separated list of migration locations>
 pgmigrations apply
 ```
 
@@ -53,12 +53,12 @@ This will apply any unapplied migrations. Each migration is applied in an atomic
 
 ### Rollback a migration
 ```
-pgmigrations rollback --dsn=<dsn> [--locations <comma separated list of migration locations>]
+pgmigrations rollback --dsn=<dsn> [--path <colon separated list of migration locations>]
 ```
 or
 ```
 export PGMIGRATIONS_DSN=<dsn>
-export PGMIGRATIONS_LOCATIONS=<comma separated list of migration locations>
+export PGMIGRATIONS_PATH=<colon separated list of migration locations>
 pgmigrations rollback <name>
 ```
 
