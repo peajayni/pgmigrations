@@ -11,11 +11,6 @@ SQL migrations for projects using PostgreSQL
 
 ### Initialise the migrations
 ```
-pgmigrations init --dsn <dsn>
-```
-or
-```
-export PGMIGRATIONS_DSN=<dsn>
 pgmigrations init
 ```
 
@@ -23,11 +18,6 @@ This will create a directory called ```migrations``` in the current working dire
 
 ### Create a migration
 ```
-pgmigrations create --dsn <dsn> <tag>
-```
-or
-```
-export PGMIGRATIONS_DSN=<dsn>
 pgmigrations create <tag>
 ```
 

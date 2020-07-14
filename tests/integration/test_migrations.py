@@ -8,7 +8,11 @@ import pytest
 
 from pgmigrations import constants, data_access
 from pgmigrations.api import Migrations, Migration
-from pgmigrations.exceptions import MigrationsNotFound, MigrationNotFound, MigrationAlreadyExists
+from pgmigrations.exceptions import (
+    MigrationsNotFound,
+    MigrationNotFound,
+    MigrationAlreadyExists,
+)
 from tests import DSN
 
 BASE_LOCATION = pathlib.Path(__file__).parent.absolute() / "fixtures" / "migrations"
@@ -22,7 +26,7 @@ def freeze_time():
 
 @pytest.fixture(autouse=True)
 def clean_database():
-    tables = [constants.MIGRATIONS_TABLE_NAME, 'first', 'second']
+    tables = [constants.MIGRATIONS_TABLE_NAME, "first", "second"]
     with data_access.get_cursor(DSN) as cursor:
         for table in tables:
             if data_access.table_exists(cursor, table):
@@ -38,19 +42,17 @@ def workspace():
 
 @pytest.fixture
 def inited_workspace(workspace):
-    Migrations(DSN).init()
+    Migrations().init()
     yield workspace
 
 
 @pytest.fixture
 def migrations():
-    return Migrations(DSN)
+    return Migrations()
 
 
-def test_migrations_init(workspace, migrations):
-    migrations.init()
-
-    migrations_dir = workspace / constants.MIGRATIONS_DIRECTORY
+def test_migrations_init(inited_workspace, migrations):
+    migrations_dir = inited_workspace / constants.MIGRATIONS_DIRECTORY
 
     assert migrations_dir.exists()
 
@@ -60,7 +62,9 @@ def test_create_migration(inited_workspace, migrations):
     migrations.create(tag)
 
     expected_migration = (
-        inited_workspace / constants.MIGRATIONS_DIRECTORY / f"20200701_0000_migration_{tag}"
+        inited_workspace
+        / constants.MIGRATIONS_DIRECTORY
+        / f"20200701_0000_migration_{tag}"
     )
     expected_apply = expected_migration / constants.APPLY_FILENAME
     expected_rollback = expected_migration / constants.ROLLBACK_FILENAME
@@ -77,7 +81,9 @@ def test_create_multiple_migrations(inited_workspace, migrations):
     migrations.create(tag1)
 
     expected_migration = (
-        inited_workspace / constants.MIGRATIONS_DIRECTORY / f"20200701_0000_migration_{tag1}"
+        inited_workspace
+        / constants.MIGRATIONS_DIRECTORY
+        / f"20200701_0000_migration_{tag1}"
     )
     expected_apply = expected_migration / constants.APPLY_FILENAME
     expected_rollback = expected_migration / constants.ROLLBACK_FILENAME
@@ -96,19 +102,19 @@ def test_create_duplicate_migrations(inited_workspace, migrations):
 
 
 def test_migrations():
-    migrations = Migrations(DSN)
+    migrations = Migrations()
     migrations.locations = [BASE_LOCATION]
     expected_migrations = [
-        Migration(DSN, BASE_LOCATION / "20200701_0000_migration_first"),
-        Migration(DSN, BASE_LOCATION / "20200701_0000_migration_second"),
+        Migration(BASE_LOCATION / "20200701_0000_migration_first"),
+        Migration(BASE_LOCATION / "20200701_0000_migration_second"),
     ]
     assert migrations.migrations == expected_migrations
 
 
 def test_apply():
-    migrations = Migrations(DSN, locations=[BASE_LOCATION])
+    migrations = Migrations(locations=[BASE_LOCATION])
 
-    migrations.apply()
+    migrations.apply(DSN)
 
     expected_tables = ["first", "second"]
     with data_access.get_cursor(DSN) as cursor:
@@ -120,11 +126,13 @@ def test_apply():
 
 
 def test_rollback():
-    migrations = Migrations(DSN, locations=[BASE_LOCATION])
-    migrations.apply()
+    migrations = Migrations(locations=[BASE_LOCATION])
+    migrations.apply(DSN)
 
-    for table, migration in zip(["second", "first"], reversed(migrations.migrations[-2:])):
-        migrations.rollback(migration.name)
+    for table, migration in zip(
+        ["second", "first"], reversed(migrations.migrations[-2:])
+    ):
+        migrations.rollback(DSN, migration.name)
 
         with data_access.get_cursor(DSN) as cursor:
             assert not data_access.table_exists(cursor, table)
@@ -132,20 +140,20 @@ def test_rollback():
 
 
 def test_apply_when_no_migrations(workspace):
-    migrations = Migrations(DSN)
+    migrations = Migrations()
     migrations.locations = []
     with pytest.raises(MigrationsNotFound):
-        migrations.apply()
+        migrations.apply(DSN)
 
 
 def test_rollback_when_no_migrations(workspace):
-    migrations = Migrations(DSN)
+    migrations = Migrations()
     migrations.locations = []
     with pytest.raises(MigrationsNotFound):
-        migrations.rollback(sentinel.name)
+        migrations.rollback(DSN, sentinel.name)
 
 
 def test_rollback_invalid_name():
-    migrations = Migrations(DSN, locations=[BASE_LOCATION])
+    migrations = Migrations(locations=[BASE_LOCATION])
     with pytest.raises(MigrationNotFound):
-        migrations.rollback("does_not_exist")
+        migrations.rollback(DSN, "does_not_exist")

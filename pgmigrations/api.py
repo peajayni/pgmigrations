@@ -31,8 +31,7 @@ class MigrationScript:
 
 
 class Migration:
-    def __init__(self, dsn, path):
-        self.dsn = dsn
+    def __init__(self, path):
         self.path = path
 
     @property
@@ -59,9 +58,9 @@ class Migration:
         path = self.path / constants.ROLLBACK_FILENAME
         return MigrationScript(self, path)
 
-    def apply(self):
+    def apply(self, dsn):
         LOGGER.debug("%s - running apply", self)
-        with data_access.get_cursor(self.dsn) as cursor:
+        with data_access.get_cursor(dsn) as cursor:
             if self.is_applied(cursor):
                 LOGGER.debug("%s - nothing to do", self)
                 return
@@ -69,9 +68,9 @@ class Migration:
             data_access.record_apply(cursor, self.name)
         LOGGER.debug("%s - apply succeeded", self)
 
-    def rollback(self):
+    def rollback(self, dsn):
         LOGGER.debug("%s - running rollback", self)
-        with data_access.get_cursor(self.dsn) as cursor:
+        with data_access.get_cursor(dsn) as cursor:
             if not self.is_applied(cursor):
                 LOGGER.debug("%s - nothing to do", self)
                 return
@@ -95,19 +94,14 @@ class Migration:
         return self.__str__()
 
     def __eq__(self, other):
-        return (
-            isinstance(other, self.__class__)
-            and self.dsn == other.dsn
-            and self.path == other.path
-        )
+        return isinstance(other, self.__class__) and self.path == other.path
 
     def __lt__(self, other):
         return self.name < other.name
 
 
 class Migrations:
-    def __init__(self, dsn, locations=None):
-        self.dsn = dsn
+    def __init__(self, locations=None):
         self.base_location = pathlib.Path.cwd() / constants.MIGRATIONS_DIRECTORY
         self.locations = [CORE_LOCATION, self.base_location] + (locations or [])
 
@@ -120,30 +114,30 @@ class Migrations:
         for location in self.locations:
             paths += list(location.glob("*_migration_*"))
         LOGGER.debug("Found migration paths: %s", paths)
-        migrations = sorted([Migration(self.dsn, path) for path in paths])
+        migrations = sorted([Migration(path) for path in paths])
         LOGGER.info("Found migrations: %s", migrations)
         return migrations
 
     def create(self, tag):
         timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M")
         path = self.base_location / f"{timestamp}_migration_{tag}"
-        migration = Migration(self.dsn, path)
+        migration = Migration(path)
         if migration in self.migrations:
             raise MigrationAlreadyExists(f"Migration {migration} already exists")
         migration.create()
 
-    def apply(self):
+    def apply(self, dsn):
         self.ensure_migrations_exist()
         for migration in self.migrations:
-            migration.apply()
+            migration.apply(dsn)
 
-    def rollback(self, name):
+    def rollback(self, dsn, name):
         self.ensure_migrations_exist()
         matches = [migration for migration in self.migrations if migration.name == name]
         if not matches:
             raise MigrationNotFound(f"Migration {name} not found")
         migration = matches[0]
-        migration.rollback()
+        migration.rollback(dsn)
 
     def ensure_migrations_exist(self):
         if not self.migrations:
@@ -152,8 +146,4 @@ class Migrations:
             )
 
     def __eq__(self, other):
-        return (
-            isinstance(other, self.__class__)
-            and self.dsn == other.dsn
-            and self.locations == other.locations
-        )
+        return isinstance(other, self.__class__) and self.locations == other.locations
