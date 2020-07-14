@@ -1,4 +1,4 @@
 #!/bin/bash
 set -eufx
 
-pytest --cov=pgevents tests/unit
+pytest --cov=pgmigrations tests/unit
